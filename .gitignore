@@ -1,0 +1,15 @@
+# Compiled binaries
+crawler
+crawler.exe
+
+# Output directory (if building to bin/ or dist/)
+/bin/
+/dist/
+
+# Test binaries & coverage artifacts
+*.test
+*.out
+
+# Environment & local config files
+.env
+*.local
