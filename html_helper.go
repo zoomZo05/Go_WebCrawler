@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"io"
+	"net/http"
 	"net/url"
 	"strings"
 
@@ -107,5 +110,85 @@ func extractPageData(html, pageURL string) PageData {
 	}
 
 	return data
+}
+
+
+func getHTML(rawURL string) (string, error){
+		
+	req, err := http.NewRequest("GET", rawURL, nil)
+	if err != nil {
+		return "", err
+	}
+
+	req.Header.Set("User-Agent", "BootCrawler/1.0")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		return "", err
+	}
+
+	contentType := resp.Header.Get("content-type")
+	if !strings.Contains(contentType, "text/html") {
+		return "", err
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(body), nil
+}
+
+
+func crawlPage(rawBaseURL, rawCurrentURL string, pages map[string]int){
+	base, err := url.Parse(rawBaseURL)
+	if err != nil {
+		return
+	}
+
+	current, err := url.Parse(rawCurrentURL)
+	if err != nil {
+		return
+	}
+
+	if base.Hostname() != current.Hostname(){
+		return
+	}
+
+	normalizedURL, err := normalizeURL(rawCurrentURL)
+	if err != nil {
+		return
+	}
+
+	if _, ok := pages[normalizedURL]; ok {
+		pages[normalizedURL]++
+		return
+	}
+
+	pages[normalizedURL] = 1
+
+	fmt.Printf("Crawling: %s\n", rawCurrentURL)
+
+	result ,err := getHTML(rawCurrentURL)
+	if err != nil {
+		return
+	}
+
+	listOfUrl,err := getURLsFromHTML(result,current)
+	if err != nil {
+		return
+	}
+
+	for _, href := range listOfUrl{
+		crawlPage(rawBaseURL, href, pages)
+	}
 }
 
