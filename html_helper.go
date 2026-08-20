@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -112,9 +111,8 @@ func extractPageData(html, pageURL string) PageData {
 	return data
 }
 
+func getHTML(rawURL string) (string, error) {
 
-func getHTML(rawURL string) (string, error){
-		
 	req, err := http.NewRequest("GET", rawURL, nil)
 	if err != nil {
 		return "", err
@@ -146,49 +144,3 @@ func getHTML(rawURL string) (string, error){
 
 	return string(body), nil
 }
-
-
-func crawlPage(rawBaseURL, rawCurrentURL string, pages map[string]int){
-	base, err := url.Parse(rawBaseURL)
-	if err != nil {
-		return
-	}
-
-	current, err := url.Parse(rawCurrentURL)
-	if err != nil {
-		return
-	}
-
-	if base.Hostname() != current.Hostname(){
-		return
-	}
-
-	normalizedURL, err := normalizeURL(rawCurrentURL)
-	if err != nil {
-		return
-	}
-
-	if _, ok := pages[normalizedURL]; ok {
-		pages[normalizedURL]++
-		return
-	}
-
-	pages[normalizedURL] = 1
-
-	fmt.Printf("Crawling: %s\n", rawCurrentURL)
-
-	result ,err := getHTML(rawCurrentURL)
-	if err != nil {
-		return
-	}
-
-	listOfUrl,err := getURLsFromHTML(result,current)
-	if err != nil {
-		return
-	}
-
-	for _, href := range listOfUrl{
-		crawlPage(rawBaseURL, href, pages)
-	}
-}
-

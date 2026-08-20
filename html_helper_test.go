@@ -184,4 +184,3 @@ func TestExtractPageData(t *testing.T) {
 		t.Errorf("expected %+v, got %+v", expected, actual)
 	}
 }
-
