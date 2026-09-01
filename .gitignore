@@ -13,3 +13,4 @@ crawler.exe
 # Environment & local config files
 .env
 *.local
+*.json

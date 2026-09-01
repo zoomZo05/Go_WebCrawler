@@ -12,16 +12,26 @@ type config struct {
 	mu                 *sync.RWMutex //share read
 	concurrencyControl chan struct{}
 	wg                 *sync.WaitGroup
+	maxPages           int
+}
+
+func (cfg *config) pagesLen() int {
+	cfg.mu.RLock()
+	defer cfg.mu.RUnlock()
+	return len(cfg.pages)
 }
 
 func (c *config) crawlPage(rawCurrentURL string) {
-
 	// Acquire semaphore slot & register goroutine , and this will be recursive call.
-	defer c.wg.Done()            // Decrement waitgroup "-1"
 	c.concurrencyControl <- struct{}{} // this will be added until 5
 	defer func() {
 		<-c.concurrencyControl // Release slot
+		defer c.wg.Done()      // Decrement waitgroup "-1"
 	}()
+
+	if c.pagesLen() >= c.maxPages {
+		return
+	}
 
 	current, err := url.Parse(rawCurrentURL)
 	if err != nil {
@@ -66,7 +76,6 @@ func (c *config) crawlPage(rawCurrentURL string) {
 		go c.crawlPage(href)
 	}
 
-	
 	//defer is working here channel is free 1 slot
 }
 
